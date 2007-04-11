@@ -140,7 +140,22 @@ function! s:cvsFunctions.Annotate(argList)
     if &filetype == 'CVSAnnotate'
       " This is a CVSAnnotate buffer.  Perform annotation of the version
       " indicated by the current line.
-      let caption = matchstr(getline('.'),'\v%(^[0-9.]+)')
+      let revision = matchstr(getline('.'),'\v^[0-9.]+')
+
+      if VCSCommandGetOption('VCSCommandCVSAnnotateParent', 0) != 0
+        if revision != '1.1'
+          let revmaj = matchstr(revision,'\v[0-9.]+\ze\.[0-9]+')
+          let revmin = matchstr(revision,'\v[0-9.]+\.\zs[0-9]+') - 1
+          if revmin == 0
+            " Jump to ancestor branch
+            let revision = matchstr(revmaj,'\v[0-9.]+\ze\.[0-9]+')
+          else
+            let revision = revmaj . "." .  revmin
+          endif
+        endif
+      endif
+
+      let caption = revision
       let options = ' -r' . caption
     else
       let caption = ''

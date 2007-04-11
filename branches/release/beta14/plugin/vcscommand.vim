@@ -1170,6 +1170,16 @@ if VCSCommandGetOption('VCSCommandEnableBufferSetup', 0)
   call VCSCommandEnableBufferSetup()
 endif
 
+" Section: VIM shutdown hook {{{1
+
+" Close all result buffers when VIM exits, to prevent them from being restored
+" via viminfo.
+
+augroup VCSCommandVIMShutdown
+  au!
+  au VimLeavePre * bufdo if exists('b:VCSCommandOriginalBuffer')|bw|endif
+augroup END
+
 " Section: Plugin completion {{{1
 
 let loaded_VCSCommand = 2

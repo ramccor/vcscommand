@@ -1175,7 +1175,9 @@ endif
 " Close all result buffers when VIM exits, to prevent them from being restored
 " via viminfo.
 
-function s:closeAllResultBuffers()
+" Function: s:CloseAllResultBuffers() {{{2
+" Closes all vcscommand result buffers.
+function! s:CloseAllResultBuffers()
   " This avoids using bufdo as that may load buffers already loaded in another
   " vim process, resulting in an error.
   let buffnr = 1
@@ -1190,7 +1192,7 @@ endfunction
 
 augroup VCSCommandVIMShutdown
   au!
-  au VimLeavePre * call s:closeAllResultBuffers()
+  au VimLeavePre * call s:CloseAllResultBuffers()
 augroup END
 
 " Section: Plugin completion {{{1

@@ -83,6 +83,8 @@ if v:version < 700
   finish
 endif
 
+runtime plugin/vcscommand.vim
+
 call system(VCSCommandGetOption('VCSCommandCVSExec', 'cvs') . ' --version')
 if v:shell_error
   " CVS is not installed
@@ -397,12 +399,4 @@ amenu <silent> &Plugin.VCS.CVS.WatchOff    <Plug>CVSWatchOff
 amenu <silent> &Plugin.VCS.CVS.WatchRemove <Plug>CVSWatchRemove
 
 " Section: Plugin Registration {{{1
-" If the vcscommand.vim plugin hasn't loaded, delay registration until it
-" loads.
-if exists('g:loaded_VCSCommand')
-  call VCSCommandRegisterModule('CVS', expand('<sfile>'), s:cvsFunctions, s:cvsExtensionMappings)
-else
-  augroup VCSCommand
-    au User VCSLoadExtensions call VCSCommandRegisterModule('CVS', expand('<sfile>'), s:cvsFunctions, s:cvsExtensionMappings)
-  augroup END
-endif
+call VCSCommandRegisterModule('CVS', expand('<sfile>'), s:cvsFunctions, s:cvsExtensionMappings)

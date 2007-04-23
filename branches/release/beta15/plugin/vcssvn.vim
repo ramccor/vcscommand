@@ -137,32 +137,32 @@ endfunction
 " Function: s:svnFunctions.Diff(argList) {{{2
 function! s:svnFunctions.Diff(argList)
   if len(a:argList) == 1
-    let revOptions = ' -r' . a:argList[0]
+    let revOptions = ['-r' . a:argList[0]]
     let caption = '(' . a:argList[0] . ' : current)'
   elseif len(a:argList) == 2
-    let revOptions = ' -r' . a:argList[0] . ':' . a:argList[1]
+    let revOptions = ['-r' . a:argList[0] . ':' . a:argList[1]]
     let caption = '(' . a:argList[0] . ' : ' . a:argList[1] . ')'
   else
-    let revOptions = ''
+    let revOptions = [] 
     let caption = ''
   endif
 
   let svnDiffExt = VCSCommandGetOption('VCSCommandSVNDiffExt', '')
   if svnDiffExt == ''
-    let diffExtString = ''
+    let diffExt = []
   else
-    let diffExtString = ' --diff-cmd ' . svnDiffExt . ' '
+    let diffExt = ['--diff-cmd ' . svnDiffExt]
   endif
 
-  let svnDiffOpt = VCSCommandGetOption('VCSCommandsvnDiffOpt', '')
+  let svnDiffOpt = VCSCommandGetOption('VCSCommandSVNDiffOpt', '')
 
   if svnDiffOpt == ''
-    let diffOptionString = ''
+    let diffOptions = []
   else
-    let diffOptionString = ' -x -' . svnDiffOpt . ' '
+    let diffOptions = ['-x -' . svnDiffOpt]
   endif
 
-  let resultBuffer = s:DoCommand('diff' . diffExtString . diffOptionString . revOptions , 'diff', caption)
+  let resultBuffer = s:DoCommand(join(['diff'] + diffExt + diffOptions + revOptions), 'diff', caption)
   if resultBuffer > 0
     set filetype=diff
   else

@@ -341,18 +341,25 @@ function! s:ExecuteVCSCommand(command, argList, verifyBuffer)
 
     let originalBuffer = VCSCommandGetOriginalBuffer(buffer)
     let bufferName = bufname(originalBuffer)
-    if !isdirectory(bufferName) && !filereadable(bufferName)
-      throw 'No such file ' . bufferName
-    endif
 
-    if(a:verifyBuffer)
-      let revision = VCSCommandGetRevision()
-      if revision == ''
-        throw 'Unable to obtain version information.'
-      elseif revision == 'Unknown'
-        throw 'Item not under source control'
-      elseif revision == 'New'
-        throw 'Operation not available on newly-added item.'
+    " It is already known that the directory is under VCS control.  No further
+    " checks are needed.  Otherwise, perform some basic sanity checks to avoid
+    " VCS-specific error messages from confusing things.
+    if !isdirectory(bufferName)
+      if !filereadable(bufferName)
+        throw 'No such file ' . bufferName
+      endif
+      if(a:verifyBuffer)
+        if isdirectory(bufferName)
+        endif
+        let revision = VCSCommandGetRevision()
+        if revision == ''
+          throw 'Unable to obtain version information.'
+        elseif revision == 'Unknown'
+          throw 'Item not under source control'
+        elseif revision == 'New'
+          throw 'Operation not available on newly-added item.'
+        endif
       endif
     endif
 
@@ -519,8 +526,8 @@ function! s:SetupBuffer()
     return
   endif
 
-  if strlen(&buftype) > 0 || !filereadable(@%)
-    " No special status for special buffers.
+  if !isdirectory(@%) && (strlen(&buftype) > 0 || !filereadable(@%))
+    " No special status for special buffers other than directory buffers.
     return
   endif
 

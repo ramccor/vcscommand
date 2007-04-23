@@ -44,6 +44,8 @@ if v:version < 700
   finish
 endif
 
+runtime plugin/vcscommand.vim
+
 call system(VCSCommandGetOption('VCSCommandSVNExec', 'svn') . ' --version')
 if v:shell_error
   " SVN is not installed
@@ -278,12 +280,4 @@ function! s:svnFunctions.Update(argList)
 endfunction
 
 " Section: Plugin Registration {{{1
-" If the vcscommand.vim plugin hasn't loaded, delay registration until it
-" loads.
-if exists('g:loaded_VCSCommand')
-  call VCSCommandRegisterModule('SVN', expand('<sfile>'), s:svnFunctions, [])
-else
-  augroup VCSCommand
-    au User VCSLoadExtensions call VCSCommandRegisterModule('SVN', expand('<sfile>'), s:svnFunctions, [])
-  augroup END
-endif
+call VCSCommandRegisterModule('SVN', expand('<sfile>'), s:svnFunctions, [])

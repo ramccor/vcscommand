@@ -2,7 +2,7 @@
 "
 " Vim plugin to assist in working with files under control of CVS or SVN.
 "
-" Version:       Beta 14
+" Version:       Beta 15
 " Maintainer:    Bob Hiestand <bob.hiestand@gmail.com>
 " License:
 " Copyright (c) 2007 Bob Hiestand
@@ -1198,9 +1198,5 @@ augroup END
 " Section: Plugin completion {{{1
 
 let loaded_VCSCommand = 2
-
-" Load delayed extension plugin registration.
-silent do VCSCommand User VCSLoadExtensions
-au! VCSCommand User VCSLoadExtensions
 
 silent do VCSCommand User VCSPluginFinish

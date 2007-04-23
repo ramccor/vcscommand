@@ -37,6 +37,8 @@ if v:version < 700
   finish
 endif
 
+runtime plugin/vcscommand.vim
+
 call system(VCSCommandGetOption('VCSCommandSVKExec', 'svk') . ' --version')
 if v:shell_error
   " SVK is not installed
@@ -247,12 +249,4 @@ function! s:svkFunctions.Update(argList)
 endfunction
 
 " Section: Plugin Registration {{{1
-" If the vcscommand.vim plugin hasn't loaded, delay registration until it
-" loads.
-if exists('g:loaded_VCSCommand')
-  call VCSCommandRegisterModule('SVK', expand('<sfile>'), s:svkFunctions, [])
-else
-  augroup VCSCommand
-    au User VCSLoadExtensions call VCSCommandRegisterModule('SVK', expand('<sfile>'), s:svkFunctions, [])
-  augroup END
-endif
+call VCSCommandRegisterModule('SVK', expand('<sfile>'), s:svkFunctions, [])

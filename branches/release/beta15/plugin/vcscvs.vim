@@ -241,6 +241,16 @@ endfunction
 function! s:cvsFunctions.GetBufferInfo()
   let originalBuffer = VCSCommandGetOriginalBuffer(bufnr('%'))
   let fileName = bufname(originalBuffer)
+  if isdirectory(fileName)
+    let tag = ''
+    if filereadable(fileName . '/CVS/Tag')
+      let tagFile = readfile(fileName . '/CVS/Tag')
+      if len(tagFile) == 1
+        let tag = substitute(tagFile[0], '^T', '', '')
+      endif
+    endif
+    return [tag]
+  endif
   let realFileName = fnamemodify(resolve(fileName), ':t')
   if !filereadable(fileName)
     return ['Unknown']

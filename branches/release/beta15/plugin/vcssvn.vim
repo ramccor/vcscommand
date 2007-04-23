@@ -184,31 +184,25 @@ endfunction
 function! s:svnFunctions.GetBufferInfo()
   let originalBuffer = VCSCommandGetOriginalBuffer(bufnr('%'))
   let fileName = bufname(originalBuffer)
-  let realFileName = fnamemodify(resolve(fileName), ':t')
-  let oldCwd = VCSCommandChangeToCurrentFileDir(fileName)
-  try
-    let statusText = system(VCSCommandGetOption('VCSCommandSVNExec', 'svn') . ' status -vu "' . realFileName . '"')
-    if(v:shell_error)
-      return []
-    endif
+  let statusText = system(VCSCommandGetOption('VCSCommandSVNExec', 'svn') . ' status -vu "' . fileName . '"')
+  if(v:shell_error)
+    return []
+  endif
 
-    " File not under SVN control.
-    if statusText =~ '^?'
-      return ['Unknown']
-    endif
+  " File not under SVN control.
+  if statusText =~ '^?'
+    return ['Unknown']
+  endif
 
-    let [flags, revision, repository] = matchlist(statusText, '^\(.\{8}\)\s\+\(\S\+\)\s\+\(\S\+\)\s\+\(\S\+\)\s')[1:3]
-    if revision == ''
-      " Error
-      return ['Unknown']
-    elseif flags =~ '^A'
-      return ['New', 'New']
-    else
-      return [revision, repository]
-    endif
-  finally
-    execute 'cd' escape(oldCwd, ' ')
-  endtry
+  let [flags, revision, repository] = matchlist(statusText, '^\(.\{8}\)\s\+\(\S\+\)\s\+\(\S\+\)\s\+\(\S\+\)\s')[1:3]
+  if revision == ''
+    " Error
+    return ['Unknown']
+  elseif flags =~ '^A'
+    return ['New', 'New']
+  else
+    return [revision, repository]
+  endif
 endfunction
 
 " Function: s:svnFunctions.Info(argList) {{{2

@@ -203,26 +203,31 @@ endfunction
 
 " Function: s:cvsFunctions.Diff(argList) {{{2
 function! s:cvsFunctions.Diff(argList)
-  if len(a:argList) == 1
-    let revOptions = '-r ' . a:argList[0]
-    let caption = '(' . a:argList[0] . ' : current)'
-  elseif len(a:argList) == 2
-    let revOptions = '-r ' . a:argList[0] . ' -r ' . a:argList[1]
-    let caption = '(' . a:argList[0] . ' : ' . a:argList[1] . ')'
-  else
-    let revOptions = ''
+  if len(a:argList) == 0
+    let revOptions = []
     let caption = ''
+  elseif len(a:argList) <= 2 && a:argList[0] !~ '^-'
+    if len(a:argList) == 1
+      let revOptions = ['-r ' . a:argList[0]]
+      let caption = '(' . a:argList[0] . ' : current)'
+    elseif len(a:argList) == 2
+      let revOptions = ['-r ' . a:argList[0] . ' -r ' . a:argList[1]]
+      let caption = '(' . a:argList[0] . ' : ' . a:argList[1] . ')'
+    endif
+  else
+    " Pass-through
+    let caption = join(a:argList, ' ')
+    let revOptions = a:argList
   endif
 
   let cvsDiffOpt = VCSCommandGetOption('VCSCommandCVSDiffOpt', 'u')
-
   if cvsDiffOpt == ''
-    let diffOptionString = ''
+    let diffOptions = []
   else
-    let diffOptionString = ' -' . cvsDiffOpt . ' '
+    let diffOptions = ['-' . cvsDiffOpt]
   endif
 
-  let resultBuffer = s:DoCommand('diff ' . diffOptionString . revOptions , 'diff', caption)
+  let resultBuffer = s:DoCommand(join(['diff'] + diffOptions + revOptions), 'diff', caption)
   if resultBuffer > 0
     set filetype=diff
   else
@@ -276,7 +281,7 @@ function! s:cvsFunctions.GetBufferInfo()
     let repository=substitute(repository, '^New file!\|No revision control file$', 'New', '')
     return [revision, repository, branch]
   finally
-    execute 'cd' escape(oldCwd, ' ')
+    call VCSCommandChdir(oldCwd)
   endtry
 endfunction
 

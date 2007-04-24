@@ -128,24 +128,28 @@ endfunction
 
 " Function: s:svkFunctions.Diff(argList) {{{2
 function! s:svkFunctions.Diff(argList)
-  if len(a:argList) == 1
-    let revOptions = ' -r' . a:argList[0]
-    let caption = '(' . a:argList[0] . ' : current)'
-  elseif len(a:argList) == 2
-    let revOptions = ' -r' . a:argList[0] . ':' . a:argList[1]
-    let caption = '(' . a:argList[0] . ' : ' . a:argList[1] . ')'
-  else
-    let revOptions = ''
+  if len(a:argList) == 0
+    let revOptions = [] 
     let caption = ''
+  elseif len(a:argList) <= 2 && a:argList[0] !~ '^-'
+    if len(a:argList) == 1
+      let revOptions = ['-r' . a:argList[0]]
+      let caption = '(' . a:argList[0] . ' : current)'
+    elseif len(a:argList) == 2
+      let revOptions = ['-r' . a:argList[0] . ':' . a:argList[1]]
+      let caption = '(' . a:argList[0] . ' : ' . a:argList[1] . ')'
+    endif
+  else
+    " Pass-through
+    let caption = join(a:argList, ' ')
+    let revOptions = a:argList
   endif
 
-  let resultBuffer = s:DoCommand('diff' . revOptions , 'diff', caption)
+  let resultBuffer = s:DoCommand(join(['diff'] + revOptions), 'diff', caption)
   if resultBuffer > 0
     set filetype=diff
   else
-    if svkDiffExt == ''
-      echomsg 'No differences found'
-    endif
+    echomsg 'No differences found'
   endif
   return resultBuffer
 endfunction

@@ -138,15 +138,21 @@ endfunction
 
 " Function: s:svnFunctions.Diff(argList) {{{2
 function! s:svnFunctions.Diff(argList)
-  if len(a:argList) == 1
-    let revOptions = ['-r' . a:argList[0]]
-    let caption = '(' . a:argList[0] . ' : current)'
-  elseif len(a:argList) == 2
-    let revOptions = ['-r' . a:argList[0] . ':' . a:argList[1]]
-    let caption = '(' . a:argList[0] . ' : ' . a:argList[1] . ')'
-  else
+  if len(a:argList) == 0
     let revOptions = [] 
     let caption = ''
+  elseif len(a:argList) <= 2 && a:argList[0] !~ '^-'
+    if len(a:argList) == 1
+      let revOptions = ['-r' . a:argList[0]]
+      let caption = '(' . a:argList[0] . ' : current)'
+    elseif len(a:argList) == 2
+      let revOptions = ['-r' . a:argList[0] . ':' . a:argList[1]]
+      let caption = '(' . a:argList[0] . ' : ' . a:argList[1] . ')'
+    endif
+  else
+    " Pass-through
+    let caption = join(a:argList, ' ')
+    let revOptions = a:argList
   endif
 
   let svnDiffExt = VCSCommandGetOption('VCSCommandSVNDiffExt', '')

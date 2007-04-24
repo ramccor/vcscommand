@@ -244,12 +244,6 @@
 "   VCSBufferSetup             This event is fired just after VCS buffer setup
 "                              occurs, if enabled.
 "
-"   VCSLoadExtensions          This event is fired just before the
-"                              VCSPluginFinish event.  It is intended to be
-"                              used only by VCS extensions to register
-"                              themselves with VCSCommand if they are sourced
-"                              first.
-"
 "   VCSPluginInit              This event is fired when the VCSCommand plugin
 "                              first loads.
 "
@@ -372,59 +366,6 @@ function! s:ExecuteVCSCommand(command, argList, verifyBuffer)
     call s:ReportError(v:exception)
     return -1
   endtry
-endfunction
-
-" Function: s:CreateCommandBuffer(cmd, cmdName, originalBuffer, statusText) {{{2
-" Creates a new scratch buffer and captures the output from execution of the
-" given command.  The name of the scratch buffer is returned.
-
-function! s:CreateCommandBuffer(cmd, cmdName, originalBuffer, statusText)
-  let output = system(a:cmd)
-
-  " HACK:  if line endings in the repository have been corrupted, the output
-  " of the command will be confused.
-  let output = substitute(output, "\r", '', 'g')
-
-  " HACK:  CVS diff command does not return proper error codes
-  if v:shell_error && (a:cmdName != 'diff' || getbufvar(a:originalBuffer, 'VCSCommandVCSType') != 'CVS')
-    if strlen(output) == 0
-      throw 'Version control command failed'
-    else
-      let output = substitute(output, '\n', '  ', 'g')
-      throw 'Version control command failed:  ' . output
-    endif
-  endif
-  if strlen(output) == 0
-    " Handle case of no output.  In this case, it is important to check the
-    " file status, especially since cvs edit/unedit may change the attributes
-    " of the file with no visible output.
-
-    checktime
-    return 0
-  endif
-
-  call s:EditFile(a:cmdName, a:originalBuffer, a:statusText)
-
-  silent 0put=output
-
-  " The last command left a blank line at the end of the buffer.  If the
-  " last line is folded (a side effect of the 'put') then the attempt to
-  " remove the blank line will kill the last fold.
-  "
-  " This could be fixed by explicitly detecting whether the last line is
-  " within a fold, but I prefer to simply unfold the result buffer altogether.
-
-  if has('folding')
-    normal zR
-  endif
-
-  $d
-  1
-
-  " Define the environment and execute user-defined hooks.
-
-  silent do VCSCommand User VCSBufferCreated
-  return bufnr('%')
 endfunction
 
 " Function: s:GenerateResultBufferName(command, originalBuffer, vcsType, statusText) {{{2
@@ -901,6 +842,17 @@ function! VCSCommandGetVCSType(buffer)
   throw 'No suitable plugin'
 endfunction
 
+" Function: VCSCommandChdir(directory) {{{2
+" Changes the current directory, respecting :lcd changes.
+
+function! VCSCommandChdir(directory)
+  let command = 'cd'
+  if exists("*haslocaldir") && haslocaldir()
+    let command = 'lcd'
+  endif
+  execute command escape(a:directory, ' ')
+endfunction
+
 " Function: VCSCommandChangeToCurrentFileDir() {{{2
 " Go to the directory in which the given file is located.
 
@@ -908,7 +860,7 @@ function! VCSCommandChangeToCurrentFileDir(fileName)
   let oldCwd = getcwd()
   let newCwd = fnamemodify(resolve(a:fileName), ':p:h')
   if strlen(newCwd) > 0
-    execute 'cd' escape(newCwd, ' ')
+    call VCSCommandChdir(newCwd)
   endif
   return oldCwd
 endfunction
@@ -969,12 +921,55 @@ function! VCSCommandDoCommand(cmd, cmdName, statusText)
 
   let oldCwd = VCSCommandChangeToCurrentFileDir(fileName)
   try
-    let fullCmd = a:cmd . ' "' . realFileName . '"'
-    let resultBuffer = s:CreateCommandBuffer(fullCmd, a:cmdName, originalBuffer, a:statusText)
-    return resultBuffer
+    let output = system(a:cmd . ' "' . realFileName . '"')
   finally
-    execute 'cd' escape(oldCwd, ' ')
+    call VCSCommandChdir(oldCwd)
   endtry
+
+  " HACK:  if line endings in the repository have been corrupted, the output
+  " of the command will be confused.
+  let output = substitute(output, "\r", '', 'g')
+
+  " HACK:  CVS diff command does not return proper error codes
+  if v:shell_error && (a:cmdName != 'diff' || getbufvar(originalBuffer, 'VCSCommandVCSType') != 'CVS')
+    if strlen(output) == 0
+      throw 'Version control command failed'
+    else
+      let output = substitute(output, '\n', '  ', 'g')
+      throw 'Version control command failed:  ' . output
+    endif
+  endif
+  if strlen(output) == 0
+    " Handle case of no output.  In this case, it is important to check the
+    " file status, especially since cvs edit/unedit may change the attributes
+    " of the file with no visible output.
+
+    checktime
+    return 0
+  endif
+
+  call s:EditFile(a:cmdName, originalBuffer, a:statusText)
+
+  silent 0put=output
+
+  " The last command left a blank line at the end of the buffer.  If the
+  " last line is folded (a side effect of the 'put') then the attempt to
+  " remove the blank line will kill the last fold.
+  "
+  " This could be fixed by explicitly detecting whether the last line is
+  " within a fold, but I prefer to simply unfold the result buffer altogether.
+
+  if has('folding')
+    normal zR
+  endif
+
+  $d
+  1
+
+  " Define the environment and execute user-defined hooks.
+
+  silent do VCSCommand User VCSBufferCreated
+  return bufnr('%')
 endfunction
 
 " Function: VCSCommandGetOption(name, default) {{{2
